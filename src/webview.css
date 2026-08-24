@@ -1,0 +1,121 @@
+/* Colours come from Joplin's theme variables so the panel follows light/dark. */
+
+.nd-root {
+	font-family: var(--joplin-font-family);
+	font-size: var(--joplin-font-size);
+	color: var(--joplin-color);
+	padding: 4px 0 12px 0;
+	box-sizing: border-box;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+.nd-section {
+	margin-bottom: 14px;
+}
+
+.nd-heading {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0 0 4px 0;
+	padding: 4px 10px;
+	font-size: 0.78em;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--joplin-color-faded);
+	border-bottom: 1px solid var(--joplin-divider-color);
+}
+
+.nd-heading-icon {
+	font-size: 1.1em;
+}
+
+.nd-heading-text {
+	flex: 1;
+	min-width: 0;
+}
+
+.nd-count {
+	flex: 0 0 auto;
+	padding: 0 5px;
+	border-radius: 8px;
+	background-color: var(--joplin-divider-color);
+	color: var(--joplin-color-faded);
+	font-size: 0.95em;
+	font-weight: 600;
+}
+
+.nd-item {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	padding: 5px 10px;
+	cursor: pointer;
+	border-left: 3px solid transparent;
+	line-height: 1.35;
+}
+
+.nd-item:hover {
+	background-color: var(--joplin-selected-color2, var(--joplin-divider-color));
+}
+
+.nd-item:focus {
+	outline: none;
+	background-color: var(--joplin-selected-color2, var(--joplin-divider-color));
+}
+
+.nd-item:focus-visible {
+	border-left-color: var(--joplin-color-correct, var(--joplin-color));
+}
+
+.nd-item-selected {
+	background-color: var(--joplin-selected-color);
+	border-left-color: var(--joplin-color-correct, var(--joplin-color));
+}
+
+.nd-marker {
+	flex: 0 0 auto;
+	color: var(--joplin-color-faded);
+	font-size: 0.9em;
+}
+
+.nd-marker-note {
+	font-size: 1.2em;
+}
+
+.nd-title {
+	flex: 1;
+	min-width: 0;
+	/* Titles wrap to two lines, then ellipsise — sidebars are narrow. */
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	word-break: break-word;
+}
+
+.nd-badge {
+	flex: 0 0 auto;
+	padding: 1px 6px;
+	border-radius: 9px;
+	background-color: var(--joplin-divider-color);
+	color: var(--joplin-color-faded);
+	font-size: 0.8em;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.nd-badge-overdue {
+	background-color: var(--joplin-color-error, #d9534f);
+	color: #ffffff;
+	font-weight: 600;
+}
+
+.nd-empty {
+	padding: 4px 10px 4px 19px;
+	color: var(--joplin-color-faded);
+	font-style: italic;
+	font-size: 0.9em;
+}

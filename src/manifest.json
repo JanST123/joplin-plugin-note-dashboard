@@ -1,0 +1,16 @@
+{
+	"manifest_version": 1,
+	"id": "com.jstuhlmann.notedashboard",
+	"app_min_version": "3.0",
+	"version": "1.0.0",
+	"name": "Note Dashboard",
+	"description": "Sidebar panel with three sections: to-dos due within 8 hours, the last 4 notes you opened, and notes pinned with a 📌 in the title. Every entry opens the note on click.",
+	"author": "Jan Stuhlmann",
+	"homepage_url": "",
+	"repository_url": "",
+	"keywords": ["dashboard", "todo", "sidebar", "panel", "pinned"],
+	"categories": ["productivity"],
+	"screenshots": [],
+	"icons": {},
+	"promo_tile": {}
+}
