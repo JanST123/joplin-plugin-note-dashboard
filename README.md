@@ -29,8 +29,8 @@ Drag any row onto one of the first three sections:
 
 Dragging a **plain note** into Today or Next workday converts it to a to-do
 (`is_todo = 1`) as well as setting the date. Notes can also be dragged in from
-Joplin's own note list, which publishes `text/x-jop-note-ids` — see the caveat
-below. There is no confirmation step, and no undo.
+Joplin's own note list, which publishes `text/x-jop-note-ids`. There is no
+confirmation step, and no undo.
 
 ### Why the bands are shaped this way
 
@@ -61,9 +61,9 @@ section always lands in that section**, across 400 consecutive days × every hou
 - A to-do due **this evening** (after 18:00) appears under *Next workday*. That
   is the cost of the working-day cutoff; the badge shows the real time, so it is
   visible rather than misleading.
-- Dragging **from Joplin's note list** into the panel is implemented but
-  **unverified**. Panels are same-process iframes, so it should work; if it turns
-  out not to, dragging within the panel is unaffected.
+- Dropping **multiple** notes at once works: Joplin's note list sends an array of
+  IDs, and every note in it is rescheduled. There is no per-note confirmation, so
+  a multi-select drag rewrites several due dates in one go.
 
 ## How "recently opened" works
 
