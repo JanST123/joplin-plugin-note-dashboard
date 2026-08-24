@@ -1,13 +1,19 @@
 import joplin from 'api';
 import { MenuItemLocation, SettingItemType } from 'api/types';
-import { Note, nextMru, renderPanel } from './dashboard';
+import { Bucket, dropDueDate, isBucket, Note, nextMru, renderPanel } from './dashboard';
 
 /**
  * Note Dashboard — a sidebar panel with three sections:
  *
- *   1. To-dos whose alarm falls within the next 8 hours (overdue ones included).
- *   2. The last 4 notes that were opened.
- *   3. Notes whose title contains 📌.
+ *   1. Today — open to-dos that are overdue or due by today's cutoff.
+ *   2. Next workday — due after today's cutoff, up to the next workday's cutoff.
+ *   3. Later — due beyond that, plus to-dos with no due date.
+ *   4. The last 4 notes that were opened.
+ *   5. Notes whose title contains 📌.
+ *
+ * The first three sections accept drops: dragging a note onto one reschedules it
+ * (or clears its date, for Later). Notes can be dragged between sections and in
+ * from Joplin's own note list.
  *
  * Joplin exposes no "recently viewed" history, so section 2 is backed by our own
  * MRU list, maintained from `workspace.onNoteSelectionChange` and persisted in a
@@ -24,7 +30,7 @@ const NOTE_FIELDS = ['id', 'title', 'is_todo', 'todo_completed', 'todo_due', 'de
 const PAGE_LIMIT = 100;
 const MAX_PAGES = 500;
 const REFRESH_DEBOUNCE_MS = 300;
-// The 8h window slides even when nothing happens in the app, so re-render on a timer.
+// Section boundaries are wall-clock times, so they pass without any app activity.
 const TICK_MS = 60 * 1000;
 
 // Section 3 has to match an emoji inside note titles. Joplin's full-text search
@@ -105,9 +111,34 @@ joplin.plugins.register({
 			}
 		};
 
+		/**
+		 * Applies a drop: sets the bucket's due date on each note, converting plain
+		 * notes to to-dos so a note dragged in from the Recently-opened or Pinned
+		 * section becomes schedulable.
+		 */
+		const applyDrop = async (bucket: Bucket, noteIds: string[]) => {
+			const due = dropDueDate(bucket, Date.now());
+			for (const noteId of noteIds) {
+				try {
+					const note = await joplin.data.get(['notes', noteId], { fields: ['id', 'is_todo'] });
+					if (!note) continue;
+					const changes: Record<string, unknown> = { todo_due: due };
+					if (!note.is_todo) changes.is_todo = 1;
+					await joplin.data.put(['notes', noteId], null, changes);
+				} catch (error) {
+					console.error(`Note Dashboard: could not reschedule note ${noteId}`, error);
+				}
+			}
+		};
+
 		await joplin.views.panels.onMessage(panel, async (message: any) => {
 			if (message?.name === 'openNote' && message.id) {
 				await joplin.commands.execute('openNote', message.id);
+			} else if (message?.name === 'setDue') {
+				// The bucket comes from the webview, so validate rather than trust it.
+				if (!isBucket(message.bucket) || !Array.isArray(message.noteIds)) return;
+				await applyDrop(message.bucket, message.noteIds.filter((id: unknown) => typeof id === 'string'));
+				await refresh();
 			} else if (message?.name === 'refresh') {
 				await refresh();
 			}

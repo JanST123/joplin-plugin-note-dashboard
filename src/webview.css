@@ -113,6 +113,36 @@
 	font-weight: 600;
 }
 
+/* --- Drag and drop --- */
+
+.nd-section-droppable {
+	/* Reserve the highlight border at rest so accepting a drag doesn't reflow. */
+	border: 1px dashed transparent;
+	border-radius: 4px;
+	/* Give empty sections a big enough body to actually aim at. */
+	min-height: 2.2em;
+}
+
+.nd-section-dragover {
+	border-color: var(--joplin-color-correct, var(--joplin-color));
+	background-color: var(--joplin-selected-color2, var(--joplin-divider-color));
+}
+
+.nd-item[draggable='true'] {
+	/* Dragging is the point of these rows, so advertise it. */
+	cursor: grab;
+}
+
+.nd-item-dragging {
+	opacity: 0.4;
+	cursor: grabbing;
+}
+
+.nd-badge-undated {
+	font-style: italic;
+	opacity: 0.75;
+}
+
 .nd-empty {
 	padding: 4px 10px 4px 19px;
 	color: var(--joplin-color-faded);
