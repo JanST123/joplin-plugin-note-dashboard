@@ -1,8 +1,26 @@
-# Joplin Note Dashboard
+# Note Dashboard for Joplin
 
-A sidebar panel that surfaces the notes and to-dos you actually need right now.
-Every entry opens its note on click, and the three to-do sections accept drops to
-reschedule.
+[![npm](https://img.shields.io/npm/v/joplin-plugin-note-dashboard?color=2f7bd9)](https://www.npmjs.com/package/joplin-plugin-note-dashboard)
+[![Joplin](https://img.shields.io/badge/Joplin-%E2%89%A5%203.0-1071d3)](https://joplinapp.org/plugins/plugin/de.jan8.notedashboard/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+A sidebar panel for Joplin desktop that shows the notes and to-dos you need right now.
+Click any entry to open its note. Drag a row onto one of the three to-do sections to
+reschedule it.
+
+**Website:** <https://janst123.github.io/joplin-plugin-note-dashboard/>
+
+## Install
+
+**From Joplin (recommended):** go to *Tools → Options → Plugins* (on macOS,
+*Joplin → Settings → Plugins*), search for **Note Dashboard** and click
+*Install*. Restart Joplin when asked.
+
+**Manually:** download `de.jan8.notedashboard.jpl` from the
+[npm package](https://www.npmjs.com/package/joplin-plugin-note-dashboard?activeTab=code)
+(it's in `publish/`). Then go to *Plugins → ⚙ → Install from file*.
+
+Use *View → Toggle Note Dashboard* to show or hide the panel.
 
 ## Sections
 
@@ -83,11 +101,11 @@ and a 60-second timer — the timer matters because the section boundaries are
 wall-clock times that pass without any activity in the app. Redraws are debounced
 and never overlap.
 
-## Build
+## Development
 
 ```bash
 npm install     # also builds, via the prepare hook
-npm run dist    # -> publish/com.jstuhlmann.notedashboard.jpl
+npm run dist    # -> publish/de.jan8.notedashboard.jpl
 npm test        # section rules, drop round-trips, rendering
 ```
 
@@ -126,3 +144,7 @@ the notification.
 Section 5 scans note titles in JS rather than using the search API: Joplin's
 full-text search tokeniser drops symbols, so `search?query=📌` returns nothing.
 One paginated pass over the note list feeds all five sections.
+
+## License
+
+[MIT](LICENSE) © 2026 Jan Stuhlmann

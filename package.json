@@ -1,6 +1,16 @@
 {
   "name": "joplin-plugin-note-dashboard",
   "version": "1.0.0",
+  "description": "Joplin plugin: sidebar dashboard with Today / Next workday / Later to-do buckets, drag-and-drop rescheduling, recently opened and pinned notes.",
+  "author": "Jan Stuhlmann",
+  "homepage": "https://janst123.github.io/joplin-plugin-note-dashboard/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JanST123/joplin-plugin-note-dashboard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JanST123/joplin-plugin-note-dashboard/issues"
+  },
   "scripts": {
     "dist": "webpack --env joplin-plugin-config=buildMain && webpack --env joplin-plugin-config=buildExtraScripts && webpack --env joplin-plugin-config=createArchive",
     "test": "tsc src/dashboard.ts --outDir .test-build --module commonjs --target es2019 && node tests/dashboard.test.js",

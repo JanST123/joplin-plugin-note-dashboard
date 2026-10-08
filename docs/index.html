@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Note Dashboard for Joplin</title>
+<meta name="description" content="A Joplin sidebar panel: Today / Next workday / Later to-do buckets with drag-and-drop rescheduling, recently opened notes and 📌 pinned notes.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📌</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+	--bg: #f7f8fb;
+	--bg-alt: #ffffff;
+	--fg: #18202e;
+	--fg-muted: #5b6577;
+	--line: #e3e7ef;
+	--accent: #1071d3;
+	--accent-2: #7b4dff;
+	--accent-soft: #e6f0fc;
+	--danger: #d64545;
+	--ok: #1f9d6a;
+	--panel-bg: #ffffff;
+	--panel-fg: #32373f;
+	--panel-faded: #7c8b9e;
+	--panel-divider: #dde1e6;
+	--panel-hover: #eef2f7;
+	--panel-selected: #dfe9f7;
+	--shadow: 0 24px 60px -20px rgba(24, 40, 80, .28), 0 2px 6px rgba(24, 40, 80, .06);
+	--code-bg: #eef1f6;
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--bg: #0f131a;
+		--bg-alt: #151a23;
+		--fg: #e7ebf2;
+		--fg-muted: #9aa5b8;
+		--line: #252d3a;
+		--accent: #4ea0ff;
+		--accent-2: #a68bff;
+		--accent-soft: #16263b;
+		--danger: #ff6b6b;
+		--ok: #3ecf8e;
+		--panel-bg: #1d2129;
+		--panel-fg: #dce1e8;
+		--panel-faded: #8b96a6;
+		--panel-divider: #323844;
+		--panel-hover: #262c36;
+		--panel-selected: #2b3a52;
+		--shadow: 0 24px 60px -20px rgba(0, 0, 0, .7), 0 2px 6px rgba(0, 0, 0, .3);
+		--code-bg: #1b2130;
+	}
+}
+:root[data-theme="dark"] {
+	--bg: #0f131a; --bg-alt: #151a23; --fg: #e7ebf2; --fg-muted: #9aa5b8; --line: #252d3a;
+	--accent: #4ea0ff; --accent-2: #a68bff; --accent-soft: #16263b; --danger: #ff6b6b; --ok: #3ecf8e;
+	--panel-bg: #1d2129; --panel-fg: #dce1e8; --panel-faded: #8b96a6; --panel-divider: #323844;
+	--panel-hover: #262c36; --panel-selected: #2b3a52;
+	--shadow: 0 24px 60px -20px rgba(0, 0, 0, .7), 0 2px 6px rgba(0, 0, 0, .3); --code-bg: #1b2130;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--fg);
+	font: 16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+	-webkit-font-smoothing: antialiased;
+	overflow-x: hidden;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .88em; }
+code { background: var(--code-bg); padding: .1em .4em; border-radius: 5px; }
+
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+/* --- Nav --- */
+nav {
+	position: sticky; top: 0; z-index: 10;
+	backdrop-filter: blur(12px);
+	background: color-mix(in srgb, var(--bg) 80%, transparent);
+	border-bottom: 1px solid var(--line);
+}
+nav .wrap { display: flex; align-items: center; gap: 20px; height: 60px; }
+.brand { font-weight: 800; color: var(--fg); display: flex; align-items: center; gap: 8px; }
+.brand:hover { text-decoration: none; }
+nav .links { margin-left: auto; display: flex; gap: 20px; font-size: .93em; }
+nav .links a { color: var(--fg-muted); }
+nav .links a:hover { color: var(--fg); text-decoration: none; }
+@media (max-width: 640px) { nav .links a.opt { display: none; } }
+
+/* --- Hero --- */
+.hero { position: relative; padding: 72px 0 96px; }
+.hero::before {
+	content: ""; position: absolute; inset: -200px 0 auto 0; height: 700px; z-index: -1;
+	background:
+		radial-gradient(600px 300px at 15% 30%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+		radial-gradient(500px 280px at 85% 20%, color-mix(in srgb, var(--accent-2) 20%, transparent), transparent 70%);
+}
+.hero .wrap { display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: center; }
+@media (max-width: 900px) { .hero .wrap { grid-template-columns: 1fr; } }
+.pill {
+	display: inline-flex; align-items: center; gap: 8px;
+	padding: 4px 12px; border-radius: 999px; font-size: .82em; font-weight: 600;
+	background: var(--accent-soft); color: var(--accent);
+}
+h1 {
+	font-size: clamp(2.3rem, 5vw, 3.6rem); line-height: 1.07; letter-spacing: -.03em;
+	margin: 18px 0 18px; font-weight: 800;
+}
+h1 .grad {
+	background: linear-gradient(100deg, var(--accent), var(--accent-2));
+	-webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.lead { font-size: 1.15em; color: var(--fg-muted); max-width: 34em; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.btn {
+	display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px;
+	border-radius: 10px; font-weight: 600; border: 1px solid var(--line);
+	color: var(--fg); background: var(--bg-alt); transition: transform .15s, box-shadow .15s;
+}
+.btn:hover { text-decoration: none; transform: translateY(-1px); box-shadow: 0 6px 18px -8px rgba(0,0,0,.25); }
+.btn.primary { background: linear-gradient(100deg, var(--accent), var(--accent-2)); color: #fff; border: 0; }
+.meta { margin-top: 22px; font-size: .86em; color: var(--fg-muted); display: flex; gap: 18px; flex-wrap: wrap; }
+
+/* --- Panel mockup (mirrors src/webview.css) --- */
+.window {
+	background: var(--panel-bg); color: var(--panel-fg);
+	border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow);
+	overflow: hidden; max-width: 380px; width: 100%; justify-self: center;
+	font-size: 14px; line-height: 1.35;
+}
+.window-bar {
+	display: flex; align-items: center; gap: 7px; padding: 10px 12px;
+	border-bottom: 1px solid var(--panel-divider); font-size: .8em; color: var(--panel-faded);
+}
+.dot { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; }
+.dot:nth-child(2) { background: #febc2e; } .dot:nth-child(3) { background: #28c840; }
+.window-bar span { margin-left: 8px; }
+.nd-root { padding: 6px 0 12px; user-select: none; -webkit-user-select: none; }
+.nd-section { margin: 0 6px 12px; border: 1px dashed transparent; border-radius: 6px; min-height: 2.2em; transition: background .15s, border-color .15s; }
+.nd-section.static { border: 0; }
+.nd-heading {
+	display: flex; align-items: center; gap: 6px; margin: 0 0 4px; padding: 4px 8px;
+	font-size: .76em; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+	color: var(--panel-faded); border-bottom: 1px solid var(--panel-divider);
+}
+.nd-heading-text { flex: 1; }
+.nd-count { padding: 0 6px; border-radius: 8px; background: var(--panel-divider); font-weight: 600; }
+.nd-item {
+	display: flex; align-items: baseline; gap: 6px; padding: 5px 8px;
+	border-left: 3px solid transparent; cursor: grab; border-radius: 3px;
+	transition: background .12s;
+}
+.nd-item:hover { background: var(--panel-hover); }
+.nd-item.selected { background: var(--panel-selected); border-left-color: var(--accent); }
+.nd-item.dragging { opacity: .35; }
+.nd-item.flash { animation: flash 1s ease; }
+@keyframes flash { 0% { background: color-mix(in srgb, var(--ok) 35%, transparent); } 100% { background: transparent; } }
+.nd-marker { color: var(--panel-faded); font-size: .9em; }
+.nd-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nd-badge {
+	padding: 1px 7px; border-radius: 9px; background: var(--panel-divider); color: var(--panel-faded);
+	font-size: .8em; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.nd-badge.overdue { background: var(--danger); color: #fff; font-weight: 600; }
+.nd-badge.undated { font-style: italic; opacity: .75; }
+.nd-empty { padding: 4px 8px 4px 17px; color: var(--panel-faded); font-style: italic; font-size: .9em; }
+.nd-section.over { border-color: var(--accent); background: var(--panel-hover); }
+.demo-hint { text-align: center; color: var(--fg-muted); font-size: .85em; margin-top: 14px; }
+.demo-col { display: flex; flex-direction: column; align-items: center; }
+
+/* --- Sections --- */
+section.block { padding: 88px 0; border-top: 1px solid var(--line); }
+section.block.alt { background: var(--bg-alt); }
+.eyebrow { font-size: .8em; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+h2 { font-size: clamp(1.7rem, 3.2vw, 2.4rem); letter-spacing: -.02em; line-height: 1.15; margin: 10px 0 14px; }
+.sub { color: var(--fg-muted); max-width: 42em; font-size: 1.06em; }
+
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 44px; }
+@media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+.card {
+	background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 22px;
+	transition: transform .2s, border-color .2s;
+}
+section.block:not(.alt) .card { background: var(--bg-alt); }
+.card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.card .ic { font-size: 1.6em; }
+.card h3 { margin: 10px 0 6px; font-size: 1.05em; }
+.card p { margin: 0; color: var(--fg-muted); font-size: .94em; }
+
+/* drop table */
+.drops { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 40px; }
+@media (max-width: 760px) { .drops { grid-template-columns: 1fr; } }
+.drop {
+	border-radius: 14px; padding: 22px; border: 1px solid var(--line); background: var(--bg);
+	position: relative; overflow: hidden;
+}
+.drop::after { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--c); }
+.drop .when { font-family: "JetBrains Mono", monospace; font-weight: 600; font-size: 1.25em; margin: 8px 0 6px; color: var(--c); }
+.drop p { margin: 0; color: var(--fg-muted); font-size: .94em; }
+
+/* timeline */
+.timeline { margin-top: 44px; background: var(--bg-alt); border: 1px solid var(--line); border-radius: 14px; padding: 26px 22px 18px; }
+.tl-track { position: relative; height: 46px; border-radius: 10px; overflow: hidden; display: flex; }
+.tl-seg { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: .86em; white-space: nowrap; }
+.tl-labels { position: relative; height: 26px; margin-top: 8px; font-size: .78em; color: var(--fg-muted); font-family: "JetBrains Mono", monospace; }
+.tl-labels span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.tl-note { margin-top: 14px; font-size: .9em; color: var(--fg-muted); }
+@media (max-width: 600px) { .tl-seg { font-size: .7em; } .tl-labels { font-size: .66em; } }
+
+.proof { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 36px; }
+@media (max-width: 760px) { .proof { grid-template-columns: 1fr; } }
+.stat { text-align: center; padding: 22px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg); }
+.stat b { display: block; font-size: 2.1em; letter-spacing: -.02em; background: linear-gradient(100deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.stat span { color: var(--fg-muted); font-size: .9em; }
+
+/* install */
+.steps { counter-reset: s; display: grid; gap: 14px; margin-top: 36px; max-width: 720px; }
+.step { counter-increment: s; display: flex; gap: 16px; align-items: flex-start; padding: 18px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-alt); }
+.step::before {
+	content: counter(s); flex: 0 0 32px; height: 32px; border-radius: 50%;
+	display: grid; place-items: center; font-weight: 700; color: #fff;
+	background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+.step p { margin: 4px 0 0; }
+.step small { color: var(--fg-muted); }
+
+footer { padding: 40px 0 56px; border-top: 1px solid var(--line); color: var(--fg-muted); font-size: .9em; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
+.theme-btn { background: none; border: 1px solid var(--line); color: var(--fg-muted); border-radius: 8px; padding: 4px 10px; cursor: pointer; font: inherit; }
+
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<nav>
+	<div class="wrap">
+		<a class="brand" href="#">📌 Note Dashboard</a>
+		<div class="links">
+			<a class="opt" href="#features">Features</a>
+			<a class="opt" href="#reschedule">Rescheduling</a>
+			<a href="#install">Install</a>
+			<a href="https://github.com/JanST123/joplin-plugin-note-dashboard">GitHub</a>
+		</div>
+	</div>
+</nav>
+
+<header class="hero">
+	<div class="wrap">
+		<div>
+			<span class="pill">🧩 Plugin for Joplin desktop</span>
+			<h1>Your day, <span class="grad">at a glance</span><br>in Joplin's sidebar.</h1>
+			<p class="lead">Note Dashboard puts what's due today, what's due next workday and what's further out in one panel, along with your recently opened and pinned notes. Drag a to-do onto a section to reschedule it.</p>
+			<div class="cta">
+				<a class="btn primary" href="#install">⬇ Install</a>
+				<a class="btn" href="https://github.com/JanST123/joplin-plugin-note-dashboard">★ View on GitHub</a>
+			</div>
+			<div class="meta">
+				<span>✓ Joplin ≥ 3.0</span>
+				<span>✓ Light &amp; dark themes</span>
+				<span>✓ MIT licensed</span>
+			</div>
+		</div>
+		<div class="demo-col">
+			<div class="window" aria-label="Interactive preview of the Note Dashboard panel">
+				<div class="window-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span>Note Dashboard</span></div>
+				<div class="nd-root" id="demo"></div>
+			</div>
+			<p class="demo-hint">👆 Try it: drag a row onto another section.</p>
+		</div>
+	</div>
+</header>
+
+<section class="block alt" id="features">
+	<div class="wrap reveal">
+		<div class="eyebrow">Features</div>
+		<h2>Five sections, one panel.</h2>
+		<p class="sub">Everything is computed from your notes. There's nothing to configure and no extra data to maintain. Click any entry to open its note.</p>
+		<div class="grid">
+			<div class="card"><div class="ic">⏰</div><h3>Today</h3><p>To-dos due up to today's 18:00 cutoff. Overdue ones come first with a red badge that shows how late they are.</p></div>
+			<div class="card"><div class="ic">📅</div><h3>Next workday</h3><p>To-dos due by the next workday's cutoff. The heading shows the weekday, and on Fridays that's Monday.</p></div>
+			<div class="card"><div class="ic">🗓</div><h3>Later</h3><p>Everything due further out, followed by to-dos with no due date, so open to-dos don't get lost.</p></div>
+			<div class="card"><div class="ic">🕘</div><h3>Recently opened</h3><p>Your last four opened notes. Joplin doesn't keep this history, so the plugin records it, and it survives restarts.</p></div>
+			<div class="card"><div class="ic">📌</div><h3>Pinned</h3><p>Put 📌 in a note's title to pin it. This works for plain notes and to-dos.</p></div>
+			<div class="card"><div class="ic">🔄</div><h3>Always current</h3><p>The panel refreshes when notes change, when a sync finishes, when an alarm fires and once a minute, so the cutoffs stay accurate.</p></div>
+		</div>
+	</div>
+</section>
+
+<section class="block" id="reschedule">
+	<div class="wrap reveal">
+		<div class="eyebrow">Drag &amp; drop</div>
+		<h2>Reschedule by dragging.</h2>
+		<p class="sub">Drag a row from the panel, or from Joplin's own note list, onto a section. You can drag several notes at once. Dropping a plain note on Today or Next workday also turns it into a to-do.</p>
+		<div class="drops">
+			<div class="drop" style="--c: var(--danger)"><div class="eyebrow" style="color:var(--c)">Drop on Today</div><div class="when">today 16:00</div><p>Due this afternoon, with enough time left to get it done.</p></div>
+			<div class="drop" style="--c: var(--accent)"><div class="eyebrow" style="color:var(--c)">Drop on Next workday</div><div class="when">next workday 08:00</div><p>Skips weekends: a Friday drop lands on Monday morning, not Saturday.</p></div>
+			<div class="drop" style="--c: var(--accent-2)"><div class="eyebrow" style="color:var(--c)">Drop on Later</div><div class="when">no due date</div><p>Removes the date. The to-do stays listed under Later as undated.</p></div>
+		</div>
+		<p class="tl-note" style="margin-top:22px">In Joplin the due date is also the alarm time, so rescheduling a to-do moves its reminder too.</p>
+	</div>
+</section>
+
+<section class="block alt">
+	<div class="wrap reveal">
+		<div class="eyebrow">Why it works</div>
+		<h2>Sections follow the calendar, not countdowns.</h2>
+		<p class="sub">A rule like "Today = due within 8 hours" is a rolling window, and it breaks: at 07:00, something due today at 18:00 is 11 hours away and would show as tomorrow. Note Dashboard uses calendar days with an end-of-workday cutoff instead. Sections and drop times use the same model, so <strong>a to-do you drop on a section always appears in that section</strong>.</p>
+		<div class="timeline" aria-label="Section boundaries on a Friday">
+			<div class="tl-track">
+				<div class="tl-seg" style="flex:1.2;background:var(--danger)">Today</div>
+				<div class="tl-seg" style="flex:3;background:var(--accent)">Next workday (Fri → Mon)</div>
+				<div class="tl-seg" style="flex:1.3;background:var(--accent-2)">Later</div>
+			</div>
+			<div class="tl-labels">
+				<span style="left:0;transform:none">Fri now</span>
+				<span style="left:21.8%">Fri 18:00</span>
+				<span style="left:76.4%">Mon 18:00</span>
+				<span style="right:0;left:auto;transform:none">→</span>
+			</div>
+			<p class="tl-note">On a Friday, the middle section runs until Monday's cutoff, so items due over the weekend are included and a Friday drop (Monday 08:00) stays where you dropped it.</p>
+		</div>
+		<div class="proof">
+			<div class="stat"><b>28,800</b><span>drop round-trips checked by the test suite</span></div>
+			<div class="stat"><b>400 days</b><span>× 24 hours × 3 sections</span></div>
+			<div class="stat"><b>2 DST</b><span>changeovers per year covered, so a 23- or 25-hour day still counts as one day</span></div>
+		</div>
+	</div>
+</section>
+
+<section class="block" id="install">
+	<div class="wrap reveal">
+		<div class="eyebrow">Install</div>
+		<h2>Up and running in a minute.</h2>
+		<div class="steps">
+			<div class="step"><div><strong>Open the plugin settings</strong><p>Go to <em>Tools → Options → Plugins</em>. On macOS it's <em>Joplin → Settings → Plugins</em>.</p></div></div>
+			<div class="step"><div><strong>Search for “Note Dashboard” and click Install</strong><p><small>Prefer a file? Download <code>de.jan8.notedashboard.jpl</code> from the <a href="https://www.npmjs.com/package/joplin-plugin-note-dashboard?activeTab=code">npm package</a> and use <em>⚙ → Install from file</em>.</small></p></div></div>
+			<div class="step"><div><strong>Restart Joplin</strong><p>The panel appears in the sidebar. Use <em>View → Toggle Note Dashboard</em> to show or hide it.</p></div></div>
+			<div class="step"><div><strong>Pin a note</strong><p>Add 📌 to any note title and it shows up under Pinned.</p></div></div>
+		</div>
+	</div>
+</section>
+
+<footer>
+	<div class="wrap">
+		<span>Note Dashboard · MIT © 2026 Jan Stuhlmann · Not affiliated with Joplin.</span>
+		<span>
+			<a href="https://github.com/JanST123/joplin-plugin-note-dashboard">GitHub</a> ·
+			<a href="https://www.npmjs.com/package/joplin-plugin-note-dashboard">npm</a> ·
+			<a href="https://github.com/JanST123/joplin-plugin-note-dashboard/issues">Issues</a> ·
+			<button class="theme-btn" id="theme" type="button">◐ Theme</button>
+		</span>
+	</div>
+</footer>
+
+<script>
+(function () {
+	// --- Interactive panel demo: same section rules and drop times as the plugin. ---
+	const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+	const pad = n => String(n).padStart(2, '0');
+	const now = new Date();
+	const next = new Date(now);
+	do { next.setDate(next.getDate() + 1); } while (next.getDay() === 0 || next.getDay() === 6);
+	const nextName = WD[next.getDay()];
+
+	const badges = {
+		today: () => '16:00',
+		nextWorkday: () => nextName + ' 08:00',
+		later: () => 'no date',
+	};
+	const items = [
+		{ id: 1, t: 'Send quarterly report', b: 'today', badge: '2h overdue', cls: 'overdue' },
+		{ id: 2, t: 'Review pull request', b: 'today', badge: '14:30' },
+		{ id: 3, t: 'Call the dentist', b: 'today', badge: '17:00' },
+		{ id: 4, t: 'Prepare sprint demo', b: 'nextWorkday', badge: nextName + ' 10:00' },
+		{ id: 5, t: 'Renew passport', b: 'later', badge: '24 Oct' },
+		{ id: 6, t: 'Read “Designing Data-Intensive Apps”', b: 'later', badge: 'no date', cls: 'undated' },
+	];
+	const recent = ['Meeting notes — Monday sync', 'Packing list', 'Ideas for the garden'];
+	const pinned = ['📌 Team contacts', '📌 Weekly checklist'];
+	const sections = [
+		['today', '⏰', 'Today', 'Nothing due today.'],
+		['nextWorkday', '📅', 'Next workday · ' + nextName, 'Nothing queued.'],
+		['later', '🗓', 'Later', 'Nothing further out.'],
+	];
+	const root = document.getElementById('demo');
+	let flashId = null;
+
+	const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+	function row(it) {
+		return `<div class="nd-item${it.id === flashId ? ' flash' : ''}" draggable="true" data-id="${it.id}">`
+			+ `<span class="nd-marker">☐</span><span class="nd-title">${esc(it.t)}</span>`
+			+ `<span class="nd-badge ${it.cls || ''}">${esc(it.badge)}</span></div>`;
+	}
+	function plain(t, sel) {
+		return `<div class="nd-item${sel ? ' selected' : ''}" style="cursor:pointer"><span class="nd-marker">•</span><span class="nd-title">${esc(t)}</span></div>`;
+	}
+	function section(key, icon, title, empty, body, n, drop) {
+		return `<section class="nd-section${drop ? '' : ' static'}"${drop ? ` data-drop="${key}"` : ''}>`
+			+ `<h3 class="nd-heading"><span>${icon}</span><span class="nd-heading-text">${title}</span><span class="nd-count">${n}</span></h3>`
+			+ (n ? body : `<div class="nd-empty">${empty}</div>`) + '</section>';
+	}
+	function render() {
+		let html = '';
+		for (const [key, icon, title, empty] of sections) {
+			const list = items.filter(i => i.b === key);
+			html += section(key, icon, title, empty, list.map(row).join(''), list.length, true);
+		}
+		html += section('recent', '🕘', 'Recently opened', '', recent.map((t, i) => plain(t, i === 0)).join(''), recent.length, false);
+		html += section('pinned', '📌', 'Pinned', '', pinned.map(t => plain(t)).join(''), pinned.length, false);
+		root.innerHTML = html;
+	}
+
+	let dragId = null;
+	root.addEventListener('dragstart', e => {
+		const el = e.target.closest('.nd-item[data-id]');
+		if (!el) return;
+		dragId = Number(el.dataset.id);
+		el.classList.add('dragging');
+		e.dataTransfer.effectAllowed = 'move';
+		e.dataTransfer.setData('text/plain', String(dragId));
+	});
+	root.addEventListener('dragend', () => {
+		dragId = null;
+		root.querySelectorAll('.dragging, .over').forEach(el => el.classList.remove('dragging', 'over'));
+	});
+	root.addEventListener('dragover', e => {
+		const sec = e.target.closest('[data-drop]');
+		if (!sec || dragId === null) return;
+		e.preventDefault();
+		root.querySelectorAll('.over').forEach(el => el !== sec && el.classList.remove('over'));
+		sec.classList.add('over');
+	});
+	root.addEventListener('dragleave', e => {
+		const sec = e.target.closest('[data-drop]');
+		if (sec && !sec.contains(e.relatedTarget)) sec.classList.remove('over');
+	});
+	root.addEventListener('drop', e => {
+		const sec = e.target.closest('[data-drop]');
+		if (!sec || dragId === null) return;
+		e.preventDefault();
+		const it = items.find(i => i.id === dragId);
+		const bucket = sec.dataset.drop;
+		it.b = bucket;
+		it.badge = badges[bucket]();
+		it.cls = bucket === 'later' ? 'undated' : '';
+		flashId = it.id;
+		render();
+		setTimeout(() => { flashId = null; }, 1000);
+	});
+	render();
+
+	// --- Scroll reveal ---
+	const io = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
+		entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+	}, { threshold: .12 }) : null;
+	document.querySelectorAll('.reveal').forEach(el => io ? io.observe(el) : el.classList.add('in'));
+
+	// --- Theme toggle (remembered per visitor) ---
+	const KEY = 'nd-theme';
+	try { const t = localStorage.getItem(KEY); if (t) document.documentElement.dataset.theme = t; } catch (_) {}
+	document.getElementById('theme').addEventListener('click', () => {
+		const cur = document.documentElement.dataset.theme
+			|| (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+		const nextTheme = cur === 'dark' ? 'light' : 'dark';
+		document.documentElement.dataset.theme = nextTheme;
+		try { localStorage.setItem(KEY, nextTheme); } catch (_) {}
+	});
+})();
+</script>
+</body>
+</html>
